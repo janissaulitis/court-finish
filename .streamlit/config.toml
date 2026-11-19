@@ -1,19 +1,7 @@
-[theme]
-font = "Space Mono:https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap, sans-serif"
-headingFont = "Space Mono:https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap, sans-serif"
-baseFontWeight = 500
-baseRadius = "0.3rem"
-buttonRadius = "0.3rem"
-showWidgetBorder = true
-
 [theme.light]
-primaryColor = "#B86A00"
-backgroundColor = "#ECE7DC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#1A1A1A"
+primaryColor = "#1f9d6f"
+codeTextColor = "#8a5a00"
 
 [theme.dark]
-primaryColor = "#FFB000"
-backgroundColor = "#111111"
-secondaryBackgroundColor = "#1C1C1C"
-textColor = "#EDE6D6"
+primaryColor = "#2fb985"
+codeTextColor = "#f2c230"
