@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import os
 from datetime import datetime, time
 from io import BytesIO
@@ -11,6 +12,8 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+import kit
 
 
 YEARS = range(2018, 2025)
@@ -371,35 +374,16 @@ def build_timeline(chart_data: pd.DataFrame) -> alt.LayerChart:
     return (band + median).properties(height=max(190, 48 * len(chart_data)))
 
 
-st.set_page_config(
-    page_title="When will the court finish?",
-    page_icon="🎾",
-    layout="wide",
-)
-st.markdown("<style>.block-container{max-width:1240px}</style>", unsafe_allow_html=True)  # readable width on big monitors
+kit.page("Court Finish", "When will the last match on this court finish?", mark="clock", icon="🎾", theme="flap",
+         badge="Real ATP Challenger data", meta="For tournament production crews · 2018–2024 match history")
 
-
-# --- demo strip: a 1-minute video and a short how-to, so a first-time visitor knows what this is
 PORTFOLIO = "https://janis-saulitis-portfolio.netlify.app"
 DEMO_VIDEO = os.environ.get("DEMO_VIDEO", PORTFOLIO + "/media/finish.mp4")
-
-
-@st.dialog("Court finish predictor in 1 minute", width="large")
-def show_demo():
-    st.video(DEMO_VIDEO, autoplay=True)
-
-
-def demo_strip():
-    bar = st.container(horizontal=True)
-    if bar.button("▶ 1-min demo", type="primary", key="demo_btn"):
-        show_demo()
-    with bar.popover("How it works"):
-        st.markdown("1. The answer at the top shows when the last match on the court is likely to end, and how sure that is.\n2. Change the matches on the court or the crew's shift end, and see whether overtime is coming.\n3. Hover the timeline to see each match's likely start and finish.\n4. **Where the data comes from** at the bottom shows the sources and how the data was cleaned.")
-
-
-st.title("When will the last match on this court finish?")
-st.markdown("**Predicts the court's finish from thousands of real ATP Challenger matches**, so you know when the crew is done and whether overtime is coming.")
-demo_strip()
+kit.demo(DEMO_VIDEO, "Court Finish in 1 minute",
+         "1. The card at the top shows when the last match on the court is likely to end, and how sure that is.\n"
+         "2. Change the matches on the court or the crew's shift end, and see whether overtime is coming.\n"
+         "3. The timeline shows each match's likely start and finish.\n"
+         "4. **Where the data comes from** at the bottom shows the sources and how the data was cleaned.")
 hero = st.container()
 plan_box = st.container()
 details_box = st.container()
@@ -447,7 +431,8 @@ with audit_box.expander("Where the data comes from, and how it was cleaned", exp
             ],
         ]
     )
-    st.dataframe(audit_table, hide_index=True, width="stretch")
+    kit.table([{"r": r["Cleaning result"], "m": f"{r['Matches']:,}"} for r in audit_table.to_dict("records")],
+              [kit.col("Cleaning result", "r"), kit.col("Matches", "m", "num")])
     raw_by_year = raw_matches.groupby("source_year").size()
     used_by_year = matches.groupby("source_year").size()
     yearly_counts = pd.DataFrame(
@@ -462,7 +447,9 @@ with audit_box.expander("Where the data comes from, and how it was cleaned", exp
         ]
     )
     st.markdown("**Matches by year**")
-    st.dataframe(yearly_counts, hide_index=True, width="stretch")
+    kit.table([{k: (f"{v:,}" if isinstance(v, int) and k != "Year" else v) for k, v in r.items()} for r in yearly_counts.to_dict("records")],
+              [kit.col("Year", "Year", "strong"), kit.col("Downloaded rows", "Downloaded rows", "num"),
+               kit.col("Matches used", "Matches used", "num"), kit.col("Excluded", "Excluded", "num")])
 
     normalized_rounds = raw_matches["round"].fillna("").astype(str).str.strip()
     source_round_counts = (
@@ -519,7 +506,8 @@ with audit_box.expander("Where the data comes from, and how it was cleaned", exp
     ).astype(int)
     removed_by_round.index.name = "Year"
     st.markdown("**Removed rows by year and round**")
-    st.dataframe(removed_by_round.reset_index(), hide_index=True, width="stretch")
+    rb = removed_by_round.reset_index()
+    kit.table(rb.to_dict("records"), [kit.col("Year", "Year", "strong")] + [kit.col(c, c, "num", fmt=lambda v: f"{v:,}") for c in rb.columns[1:]])
     st.caption(
         "Counts include rows removed by any cleaning rule. Round labels are "
         "shown as provided in the source; Q1–Q3 are qualifying rounds."
@@ -552,7 +540,9 @@ with audit_box.expander("Where the data comes from, and how it was cleaned", exp
     )
     sample_table["Minutes"] = sample_table["Minutes"].round().astype(int)
     st.markdown("**Five random matches used in the model**")
-    st.dataframe(sample_table, hide_index=True, width="stretch")
+    kit.table(sample_table.to_dict("records"),
+              [kit.col("Tournament", "Tournament", "strong"), kit.col("Date", "Date", "muted"), kit.col("Winner", "Winner"),
+               kit.col("Loser", "Loser"), kit.col("Score", "Score", "code"), kit.col("Minutes", "Minutes", "num")])
 
     st.caption(
         "Only Challenger main-draw matches are considered; ATP tour, Grand Slam, "
@@ -581,7 +571,7 @@ if "initial_schedule" not in st.session_state:
         }
     )
 
-plan_box.subheader("Change the court plan")
+plan_box.markdown("#### Change the court plan")
 plan_box.caption("Edit the order of play below, then press Update forecast. "
                  "\"Not before\": leave empty, or type a time if a match can't start earlier (an evening session or a TV slot). "
                  "Match 4 in the sample is an evening match at 19:00, which is why the court waits.")
@@ -683,46 +673,68 @@ overtime = np.maximum(0, final_ends - shift_minutes)
 overtime_chance = int(round(100 * float((final_ends > shift_minutes).mean())))
 overtime_likely = int(round(float(np.percentile(overtime, 50))))
 
+ot_text = ((f"{overtime_likely // 60} h {overtime_likely % 60:02d} min" if overtime_likely >= 60 else f"{overtime_likely} min")
+           if overtime_likely else "none likely")
+def flaps(text: str, size: str = "sm", amber: bool = False) -> str:
+    cells = "".join(f'<span class="c">:</span>' if ch == ":" else f"<span>{html.escape(ch)}</span>" for ch in text)
+    return f'<div class="k-flap {size}{" amber" if amber else ""}">{cells}</div>'
+
+
+def hhmm(label: str) -> str:
+    return label.split(" ")[0]
+
+
+rows_html = []
+for m_in, r in zip(schedule, timeline_data.to_dict("records")):
+    nb = m_in.get("not_before")
+    waits = isinstance(nb, time) and abs(r["median_start"] - clock_minutes(nb)) < 1
+    late = r["median_finish"] > shift_minutes
+    status = ("o", "Overtime") if late else ("w", "Waits") if waits else ("ok", "On time")
+    nb_html = flaps(nb.strftime("%H:%M"), amber=True) if isinstance(nb, time) else '<div class="k-flap sm blank">' + "<span>·</span>" * 4 + "</div>"
+    rows_html.append(f'<div class="k-dep"><div>{flaps(("M" + str(len(rows_html) + 1))[:3])}</div><div>{flaps(hhmm(r["Likely start"]))}</div>'
+                     f'<div class="nb">{nb_html}</div><div>{flaps(hhmm(r["Likely finish"]))}</div><div class="st {status[0]}">{status[1]}</div></div>')
 with hero:
     st.markdown(
-        f"**{len(schedule)} matches on a {surface.lower()} court, first one at "
-        f"{first_start.strftime('%H:%M')}:**"
-    )
-    finish_cols = st.columns(4)
-    finish_cols[0].metric("Most likely finish", format_clock(finish_time["likely"]))
-    finish_cols[1].metric("Early (1 in 10 days)", format_clock(finish_time["early"]))
-    finish_cols[2].metric("Late (1 in 10 days)", format_clock(finish_time["late"]))
-    finish_cols[3].metric(
-        f"Overtime after {shift_end.strftime('%H:%M')}",
-        (f"{overtime_likely // 60} h {overtime_likely % 60:02d} min" if overtime_likely >= 60
-         else f"{overtime_likely} min") if overtime_likely else "none likely",
-        f"{overtime_chance}% chance of overtime",
-        delta_color="off",
-        delta_arrow="off",
-    )
-    st.caption(
-        f"Based on {SIMULATIONS:,} simulated court days, each built from real match lengths. "
-        f"Updated {run_at}. Change the plan below."
-    )
+        f'<div class="k-board"><div class="k-board-top"><span>{html.escape(surface)} court · {len(schedule)} matches · last match finishes</span>'
+        f'<span>Updated {run_at}</span></div>'
+        f'<div class="k-board-hero">{flaps(hhmm(format_clock(finish_time["likely"])), "big")}'
+        f'<div class="k-board-sub"><div>EARLY {format_clock(finish_time["early"])} <span class="m">(1 day in 10)</span></div>'
+        f'<div>LATE&nbsp; {format_clock(finish_time["late"])} <span class="m">(1 day in 10)</span></div>'
+        + (f'<div class="o">OVERTIME {ot_text.upper()} · {overtime_chance}% CHANCE</div>' if overtime_chance >= 5 else
+           f'<div style="color:#7FD18B">NO OVERTIME LIKELY · {overtime_chance}% CHANCE</div>')
+        + '</div></div>'
+        f'<div style="margin-top:20px"><div class="k-dep h"><div>MATCH</div><div>LIKELY START</div><div class="nb">NOT BEFORE</div>'
+        f'<div>FINISH</div><div class="st">STATUS</div></div>' + "".join(rows_html) + "</div>"
+        f'<div class="k-board-f"><span>Crew shift ends {shift_end.strftime("%H:%M")} · {SIMULATIONS:,} simulated court days from real ATP Challenger matches</span>'
+        f'<span style="color:#FFB000">Edit the order of play below ↓</span></div></div>', unsafe_allow_html=True)
 
 with details_box:
-    st.subheader("Match by match")
-    st.altair_chart(build_timeline(timeline_data), width="stretch")
-    st.caption(
-        "Light bar: from the earliest likely start to the latest likely finish (1 day in 10 earlier or later). "
-        "Dark bar: the most likely start and finish."
-    )
+    st.markdown("#### Match by match")
+    lo = int(timeline_data["range_start"].min()) // 60 * 60
+    hi = (max(int(timeline_data["range_finish"].max()), shift_minutes) + 59) // 60 * 60
+    kit.timeline([{"label": r["Match"], "sub": f"{r['Round']} · likely {r['Likely start']}–{r['Likely finish']}",
+                   "lo": r["range_start"], "hi": r["range_finish"], "mid0": r["median_start"], "mid1": r["median_finish"],
+                   "late": r["median_finish"] > shift_minutes} for r in timeline_data.to_dict("records")],
+                 lo, hi, marker=(shift_minutes, f"shift ends {shift_end.strftime('%H:%M')}"))
+    st.markdown("<div class='k-tl-legend'><span><i style='background:var(--k-go-soft)'></i>earliest likely start to latest likely finish"
+                "</span><span><i style='background:var(--k-go)'></i>most likely</span>"
+                "<span><i style='background:var(--k-risk)'></i>most likely, but past the shift end</span></div>", unsafe_allow_html=True)
     with st.expander("All numbers per match"):
-        st.dataframe(forecast, hide_index=True, width="stretch")
+        kit.table(forecast.to_dict("records"),
+                  [kit.col("Match", "Match", "strong"), kit.col("Round", "Round", "chip", {}), kit.col("Based on", "Sample", "muted"),
+                   kit.col("Matches", "Historical matches", "num", fmt=lambda v: f"{v:,}"), kit.col("Typical length", "Duration median", "num"),
+                   kit.col("Likely start", "Start likely", "num"), kit.col("Likely finish", "Finish likely", "num"),
+                   kit.col("Late finish (1 in 10)", "Finish P90", "num")])
 
 with audit_box.expander("How long Challenger matches take, by round"):
-    st.dataframe(
-        historical_duration_table(matches, str(surface)),
-        hide_index=True,
-        width="stretch",
-    )
+    kit.table(historical_duration_table(matches, str(surface)).to_dict("records"),
+              [kit.col("Round", "Round", "chip", {}), kit.col("Matches", "Sample used", "num", fmt=lambda v: f"{v:,}"),
+               kit.col("Based on", "Estimate based on", "muted"), kit.col("Short (1 in 10)", "10th percentile", "num"),
+               kit.col("Typical", "Median", "num"), kit.col("Long (1 in 10)", "90th percentile", "num")])
     st.caption(
         f"Estimates use same-surface-and-round samples when at least "
         f"{MIN_GROUP_SIZE} matches are available; otherwise they fall back "
         "to all usable matches on the selected surface."
     )
+
+kit.footer("app.py · 2,000 simulated court days per forecast")
