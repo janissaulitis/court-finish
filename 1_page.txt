@@ -1,0 +1,185 @@
+COURT FINISH
+
+When will the last match on this court finish?
+REAL ATP CHALLENGER DATA
+For tournament production crews · 2018–2024 match history
+
+▶ 1-min demo
+
+How it works
+
+expand_more
+HARD COURT · 5 MATCHES · LAST MATCH FINISHES
+UPDATED 16:24 RIGA TIME
+2
+2
+:
+3
+0
+EARLY 21:40 (1 day in 10)
+LATE  23:31 (1 day in 10)
+OVERTIME 4 H 00 MIN · 100% CHANCE
+MATCH
+LIKELY START
+NOT BEFORE
+FINISH
+STATUS
+M
+1
+1
+1
+:
+0
+0
+·
+·
+·
+·
+1
+2
+:
+3
+1
+ON TIME
+M
+2
+1
+2
+:
+4
+6
+·
+·
+·
+·
+1
+4
+:
+2
+5
+ON TIME
+M
+3
+1
+4
+:
+4
+0
+·
+·
+·
+·
+1
+6
+:
+1
+9
+ON TIME
+M
+4
+1
+9
+:
+0
+0
+1
+9
+:
+0
+0
+2
+0
+:
+3
+4
+OVERTIME
+M
+5
+2
+0
+:
+4
+9
+·
+·
+·
+·
+2
+2
+:
+3
+0
+OVERTIME
+CREW SHIFT ENDS 18:30 · 2,000 SIMULATED COURT DAYS FROM REAL ATP CHALLENGER MATCHES
+EDIT THE ORDER OF PLAY BELOW ↓
+Change the court plan
+
+Edit the order of play below, then press Update forecast. "Not before": leave empty, or type a time if a match can't start earlier (an evening session or a TV slot). Match 4 in the sample is an evening match at 19:00, which is why the court waits.
+
+Surface
+
+First match start
+
+⁦
+11
+:
+00
+⁩
+
+Changeover (min)
+
+Crew shift ends
+
+⁦
+18
+:
+30
+⁩
+
+Update forecast
+
+Match by match
+Match 1
+R32 · likely 11:00–12:31
+Match 2
+R32 · likely 12:46–14:25
+Match 3
+R32 · likely 14:40–16:19
+Match 4
+R32 · likely 19:00–20:34
+Match 5
+R32 · likely 20:49–22:30
+11:00
+12:00
+13:00
+14:00
+15:00
+16:00
+17:00
+18:00
+19:00
+20:00
+21:00
+22:00
+23:00
+00:00
+shift ends 18:30
+earliest likely start to latest likely finish
+most likely
+most likely, but past the shift end
+keyboard_arrow_right
+
+All numbers per match
+
+The data comes from a third-party GitHub copy of Jeff Sackmann’s dataset (github.com/Aneeshers/tennis-sackmann-archive), because the original file links returned 404.
+
+keyboard_arrow_right
+
+Where the data comes from, and how it was cleaned
+
+keyboard_arrow_right
+
+How long Challenger matches take, by round
+
+Built by Jānis Saulītis with AI · app.py · 2,000 simulated court days per forecast
+See more tools
