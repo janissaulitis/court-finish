@@ -16,7 +16,7 @@ def open_app(page):
     if wake.count():
         print("was asleep, waking up"); wake.click(); page.wait_for_timeout(90_000)
     app = page.frame_locator("iframe[title='streamlitApp']")
-    app.locator(".k-board").first.wait_for(timeout=180_000)
+    app.locator(".k-flap.sm").first.wait_for(timeout=180_000)
     return app
 
 
