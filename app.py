@@ -704,7 +704,7 @@ with hero:
            f'<div style="color:#7FD18B">NO OVERTIME LIKELY · {overtime_chance}% CHANCE</div>')
         + '</div></div>'
         f'<div style="margin-top:20px"><div class="k-dep h"><div>MATCH</div><div>LIKELY START</div><div class="nb">NOT BEFORE</div>'
-        f'<div>FINISH</div><div>STATUS</div></div>' + "".join(rows_html) + "</div>"
+        f'<div>FINISH</div><div class="st">STATUS</div></div>' + "".join(rows_html) + "</div>"
         f'<div class="k-board-f"><span>Crew shift ends {shift_end.strftime("%H:%M")} · {SIMULATIONS:,} simulated court days from real ATP Challenger matches</span>'
         f'<span style="color:#FFB000">Edit the order of play below ↓</span></div></div>', unsafe_allow_html=True)
 
