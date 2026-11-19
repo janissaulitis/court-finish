@@ -589,7 +589,8 @@ with plan_box.form("court_plan"):
         help="The earliest start for the first match on this court.",
     )
     changeover = setting_cols[2].number_input(
-        "Changeover between matches (minutes)",
+        "Changeover (min)",
+        help="Minutes between one match ending and the next one starting.",
         min_value=0,
         max_value=60,
         value=CHANGEOVER_DEFAULT,
